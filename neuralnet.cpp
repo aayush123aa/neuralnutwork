@@ -1,6 +1,8 @@
 #include<iostream>
 #include<cmath>
-#include <iterator>
+#include <fstream>
+#include <ostream>
+#include<sstream>
 #include<vector>
 #include<random>
 
@@ -122,9 +124,11 @@ public:
 
 
 		//feedforward wala yeta bata suru ))
-	void FeedForward()
+	void FeedForward(std::vector<double>& input)
 	{
 		std::vector<double> activation_vector(sizes[0]);
+
+		activation_vector = input;
 				
 
 	
@@ -143,8 +147,6 @@ public:
 		}
 		
 
-		// //ok, backpropagation wala variables haru yetai siddyo )) 
-		//
 		// feedforward loop yeta bata xa haii !!!
 		
 		activations[0] = activation_vector;
@@ -168,7 +170,8 @@ public:
 		}
 		
 	}
-	void BackPropagation()
+
+	void BackPropagation(std::vector<double>& req_output)
 	{
 		//yeta bata backpropagation ko implementation suru   	
 		std::vector<double> output_errors(sizes[num_layers-1]);
@@ -259,8 +262,100 @@ public:
 		
 
 	}
+	
+	void UpdateParameters(double eta)
+	{
+	
+		for(int i =0; i <num_layers-1;i++)
+		{
+			for(int j=0; j<sizes[i+1];j++)
+			{
+				for(int k=0;k<sizes[i];k++)
+				{
+					weights[i][j][k]-= eta*nabla_w[i][j][k];
+				}
+			}
+		}
 
+		for(int i=0;i<num_layers-1;i++)
+		{
+			for(int j=0;j<sizes[i+1];j++)
+			{
+				biases[i][j]-=eta*nabla_b[i][j];
+			}
+		}
+
+
+	}
 
 };
 
+struct mnist{
+	int label;
+	std::vector<double> pixel;
+};
 
+int main()
+{
+
+	double eta = 0.76;
+	std::vector<int> sizes = {784, 30, 10};
+	network net(sizes);
+	std::ifstream file("mnist_train.csv");
+
+
+	if(!file.is_open())
+	{
+		std::cerr<<"error in opening the file !"<<std::endl;
+		return 1;
+	}
+
+	std::vector<mnist> dataset;
+	std::string line;
+
+	while(std::getline(file, line))
+	{
+		if(line.empty())	continue;
+
+		std::stringstream ss(line);
+		std::string token;
+
+		mnist sample;
+		sample.pixel.reserve(784);
+
+		if(std::getline(ss, token, ','))
+		{
+			sample.label = std::stoi(token);
+		}
+
+		while(std::getline(ss, token, ','))
+		{
+			sample.pixel.push_back(std::stod(token)/255.0);
+		}
+
+		dataset.push_back(sample);
+		
+	}
+
+	file.close();
+	int i=0;
+	while(i<dataset.size())
+	{
+		net.FeedForward(dataset[i].pixel);
+		std::vector<double> req(10);
+		req[dataset[i].label] = 1.0;
+		net.BackPropagation(req);
+		net.UpdateParameters(eta);
+		i++;
+
+	}
+
+	
+	return 0;
+	
+}
+
+
+	
+	
+	
