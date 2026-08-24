@@ -124,7 +124,7 @@ public:
 
 
 		//feedforward wala yeta bata suru ))
-	void FeedForward(std::vector<double>& input)
+	bool FeedForward(std::vector<double>& input, int targ)
 	{
 		std::vector<double> activation_vector(sizes[0]);
 
@@ -168,6 +168,27 @@ public:
 			}
 			activations[i+1] = activation_vector;
 		}
+
+		int best_index=0;
+		double best_value = activations.back()[0];
+
+		for(int i =1;i<10;i++)
+		{
+			if(activations.back()[i] > best_value)
+			{
+				best_index = i;
+				best_value = activations.back()[i];
+			}
+		}
+
+		if(best_index == targ)
+		{
+			return true;
+		}
+		else{
+			return false;
+		}
+
 		
 	}
 
@@ -338,10 +359,19 @@ int main()
 	}
 
 	file.close();
-	int i=0;
-	while(i<dataset.size())
+	
+	int i=0,accuracy =0;
+	bool res;
+
+
+	while(i<dataset.size()/3)
 	{
-		net.FeedForward(dataset[i].pixel);
+		res = net.FeedForward(dataset[i].pixel,dataset[i].label);
+		if(i>dataset.size()/3 - 2000 && res)
+		{
+			accuracy++;
+		}
+		
 		std::vector<double> req(10);
 		req[dataset[i].label] = 1.0;
 		net.BackPropagation(req);
@@ -349,7 +379,10 @@ int main()
 		i++;
 
 	}
+	
+	double results = (double)accuracy/2000.0;
 
+	std::cout<<"the neural network had an accuracy of: "<<results*100.0<<" %";
 	
 	return 0;
 	
